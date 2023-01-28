@@ -183,7 +183,7 @@ enum RegionalState {
 
 fn is_emoji(ch: char) -> bool {
     use crate::tables::emoji;
-    emoji::emoji_category(ch).2 == emoji::EmojiCat::EC_Extended_Pictographic
+    emoji::emoji_category(ch) == emoji::EmojiCat::EC_Extended_Pictographic
 }
 
 impl<'a> Iterator for UWordBounds<'a> {
@@ -221,7 +221,7 @@ impl<'a> Iterator for UWordBounds<'a> {
             let prev_zwj = cat == wd::WC_ZWJ;
             // if there's a category cached, grab it
             cat = match self.cat {
-                None => wd::word_category(ch).2,
+                None => wd::word_category(ch),
                 _ => self.cat.take().unwrap(),
             };
             take_cat = true;
@@ -453,7 +453,7 @@ impl<'a> DoubleEndedIterator for UWordBounds<'a> {
 
             // if there's a category cached, grab it
             cat = match self.catb {
-                None => wd::word_category(ch).2,
+                None => wd::word_category(ch),
                 _ => self.catb.take().unwrap(),
             };
             take_cat = true;
@@ -593,7 +593,7 @@ impl<'a> DoubleEndedIterator for UWordBounds<'a> {
                             let count = self.string[..previdx]
                                 .chars()
                                 .rev()
-                                .map(|c| wd::word_category(c).2)
+                                .map(|c| wd::word_category(c))
                                 .filter(|&c| {
                                     !(c == wd::WC_ZWJ || c == wd::WC_Extend || c == wd::WC_Format)
                                 })
@@ -691,7 +691,7 @@ impl<'a> UWordBounds<'a> {
         let nidx = idx + self.string[idx..].chars().next().unwrap().len_utf8();
         if nidx < self.string.len() {
             let nch = self.string[nidx..].chars().next().unwrap();
-            Some(wd::word_category(nch).2)
+            Some(wd::word_category(nch))
         } else {
             None
         }
@@ -702,7 +702,7 @@ impl<'a> UWordBounds<'a> {
         use crate::tables::word as wd;
         if idx > 0 {
             let nch = self.string[..idx].chars().next_back().unwrap();
-            Some(wd::word_category(nch).2)
+            Some(wd::word_category(nch))
         } else {
             None
         }

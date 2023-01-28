@@ -111,7 +111,7 @@ mod fwd {
 
             for next_char in ahead.chars() {
                 //( ¬(OLetter | Upper | Lower | ParaSep | SATerm) )* Lower
-                match se::sentence_category(next_char).2 {
+                match se::sentence_category(next_char) {
                     se::SC_Lower => return true,
                     se::SC_OLetter
                     | se::SC_Upper
@@ -189,7 +189,7 @@ mod fwd {
                 let position_before = self.pos;
                 let state_before = self.state.clone();
 
-                let next_cat = se::sentence_category(next_char).2;
+                let next_cat = se::sentence_category(next_char);
 
                 self.pos += next_char.len_utf8();
                 self.state = self.state.next(next_cat);

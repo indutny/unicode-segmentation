@@ -278,7 +278,9 @@ def emit_break_module(f, break_table, break_cats, name):
     break_cats.sort()
     for cat in break_cats:
         f.write(("        %sC_" % Name[0]) + cat + ",\n")
-    f.write("""    }
+
+    if Name == 'Grapheme':
+      f.write("""    }
 
     fn bsearch_range_value_table(c: char, r: &'static [(char, char, %sCat)]) -> (u32, u32, %sCat) {
         use core::cmp::Ordering::{Equal, Less, Greater};
@@ -306,10 +308,48 @@ def emit_break_module(f, break_table, break_cats, name):
     }
 
 """ % (Name, Name, Name[0], name, Name, name))
+    else:
+      low_break_lookup = ["Any"] * 0x20000;
+      for i, (x, y, cat) in enumerate(break_table):
+        if y >= 0x20000:
+          break_table = break_table[i:]
+          break
+
+        for c in range(x, y + 1):
+          low_break_lookup[c] = cat
+
+      f.write("""    }
+
+    fn bsearch_range_value_table(c: char, r: &'static [(char, char, %sCat)]) -> %sCat {
+        use core::cmp::Ordering::{Equal, Less, Greater};
+        match r.binary_search_by(|&(lo, hi, _)| {
+            if lo <= c && c <= hi { Equal }
+            else if hi < c { Less }
+            else { Greater }
+        }) {
+            Ok(idx) => r[idx].2,
+            Err(_) => %sC_Any
+        }
+    }
+
+    pub fn %s_category(c: char) -> %sCat {
+        if c < '\\u{20000}' {
+          %s_cat_low_lookup[c as usize]
+        } else {
+          bsearch_range_value_table(c, &%s_cat_table)
+        }
+    }
+
+""" % (Name, Name, Name[0], name, Name, name, name))
+
+      emit_table(f, "%s_cat_low_lookup" % name, low_break_lookup, "&'static [%sCat]" % Name,
+          pfun=lambda x: "%sC_%s" % (Name[0], x),
+          is_pub=False, is_const=True)
 
     emit_table(f, "%s_cat_table" % name, break_table, "&'static [(char, char, %sCat)]" % Name,
         pfun=lambda x: "(%s,%s,%sC_%s)" % (escape_char(x[0]), escape_char(x[1]), Name[0], x[2]),
         is_pub=False, is_const=True)
+
     f.write("}\n")
 
 if __name__ == "__main__":
